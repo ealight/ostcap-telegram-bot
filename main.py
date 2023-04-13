@@ -1,3 +1,5 @@
+import os
+
 import telebot
 from telebot import types
 
@@ -5,7 +7,7 @@ from chat import Room, User
 from keyboard import PageableInlineKeyboard, StaticKeyboard
 from storage import users, rooms
 
-bot = telebot.TeleBot('5807562857:AAHs8zi72QRf22TBmD4H5IvSwVO2iIqDZFo')
+bot = telebot.TeleBot(os.environ.get('TELEGRAM_TOKEN'))
 
 faq_quest = {
     "Question1": "Answer1",
@@ -38,9 +40,10 @@ def faq_handler(message: types.Message):
     faq_keyboard.send()
 
 
-def faq_action(call):
-    bot.send_message(call.from_user.id, faq_quest[call.data])
-    bot.answer_callback_query(call.id)
+def faq_action(query):
+    question = str(query.data.strip("faq:"))
+    bot.send_message(query.from_user.id, faq_quest[question])
+    bot.answer_callback_query(query.id)
 
 
 contact_options = {
@@ -65,8 +68,7 @@ def contact_action(query):
                                              button_action=choose_admin_action,
                                              callback="choose_admin", message="Виберіть людину зі списку:",
                                              data=option, button_text=lambda admin: admin['name'],
-                                             button_callback=lambda admin: f"{admin['id']}:{option_key}"
-                                             )
+                                             button_callback=lambda admin: f"{admin['id']}:{option_key}")
     option_keyboard.send()
     bot.answer_callback_query(query.id)
 
@@ -106,5 +108,6 @@ def wild_message_handler(message: types.Message):
             elif chat_id == room.user.id:
                 proxy_message = room.create_disconnect_button(room.admin.id, text=message.text)
                 proxy_message.send()
+
 
 bot.infinity_polling(skip_pending=True)
